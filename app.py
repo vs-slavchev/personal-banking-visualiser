@@ -6,7 +6,7 @@ from prepare_output_folder import prepare_output_folder
 
 prepare_output_folder()
 
-xls_file = '01-Jan-2023-02-Sept-2023_credit_card.xls'
+xls_file = 'initial.xls'
 ready_to_import = transform_csv(xls_file)
 
 categorised_expenses = "output/categorised_expenses.csv"

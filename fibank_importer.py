@@ -1,6 +1,7 @@
 import csv
 import pandas as pd
 import xlrd
+import re
 
 amount = 'amount_bgn'
 currency = 'cents_in_origin_currency'
@@ -30,6 +31,7 @@ def clean_top_and_rename_columns(input_file, output_file):
         new_header_names = {
             'Вальор:': 'date',
             'Дебит:': amount,
+            'Документ:': 'document',
             'Получател/Наредител:': currency,
             'Основание за плащане:': 'description',
         }
@@ -42,6 +44,25 @@ def clean_top_and_rename_columns(input_file, output_file):
             writer.writerow(transformed_headers)
             for row in reader:
                 writer.writerow(row)
+
+def consolidate_useful_columns(input_file, output_file):
+    """
+    When the `currency` column does not contain the currency in the regex format `[A-Z]{3}\s\d+`, this function will
+    add the `currency` text to the `description` column.
+    """
+    data = pd.read_csv(input_file)
+
+    # Define the regex pattern
+    pattern = re.compile(r'[A-Z]{3}\s\d+')
+
+    # Apply the function to each row
+    for index, row in data.iterrows():
+        if not pattern.match(str(row[currency])):
+            data.loc[index, 'description'] = str(data.loc[index, 'description']) + ' ' + str(row[currency]) + ' ' + str(row['document'])
+            data.loc[index, currency] = data.loc[index, amount]
+
+    # Write the DataFrame to the output CSV file
+    data.to_csv(output_file, index=False)
 
 
 def drop_columns(input_file, output_file):
@@ -57,6 +78,8 @@ def drop_columns(input_file, output_file):
     # drop lines with no amount or currency
     data = data[pd.notnull(data[amount])]
     data = data[pd.notnull(data[currency])]
+    # drop lines with 'description' that contains 'зареждане' or 'захранване'
+    data = data[~data['description'].str.contains('зареждане')]
 
     column_names = list(data.columns.values)
     columns_to_keep = ['date', amount, currency, 'description']
@@ -74,16 +97,20 @@ def prepare_date_format_for_pandas(input_file, output_file):
 
 
 def transform_csv(xls_file):
-    csv_file = 'output/initial.csv'
+    csv_file = 'output/1-initial.csv'
     convert_xls_to_csv(xls_file, csv_file)
 
-    transformed_transactions = 'output/cleaned_transactions.csv'
+    transformed_transactions = 'output/2-cleaned_transactions.csv'
     clean_top_and_rename_columns(csv_file, transformed_transactions)
 
-    dropped_columns = 'output/dropped_columns.csv'
-    drop_columns(transformed_transactions, dropped_columns)
+    consolidated_transactions = 'output/3-consolidated_transactions.csv'
+    consolidate_useful_columns(transformed_transactions, consolidated_transactions)
 
-    ready_to_import = 'output/ready_to_import.csv'
+    dropped_columns = 'output/4-dropped_columns.csv'
+    drop_columns(consolidated_transactions, dropped_columns)
+
+    ready_to_import = 'output/5-ready_to_import.csv'
     prepare_date_format_for_pandas(dropped_columns, ready_to_import)
 
     return ready_to_import
+

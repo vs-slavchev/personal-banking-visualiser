@@ -4,16 +4,20 @@ import pandas as pd
 
 def categorize_string(description):
     categorised_keywords = {
-        "groceries": ["lidl", "kaufland", "billa", "ebag", "cba ", "fantastico", "market ", "avanti"],
-        "health": ["lilly", "apteka", " dm ", "pharm", "remedium"],
+        "groceries": ["lidl", "kaufland", "billa", "ebag", "cba ", "fantastico", "fantastiko", "market ", "avanti", "minimart"],
+        "health": ["lilly", "apteka", "dm ", "pharm", "remedium", "cibalab", "med ", "bodimed", "ramus", "medical"],
         "entertainment": ["escape", "room", "film", "cinema", "steam", " sport", "ski", "aqua", "boat", "yoga", "hotel",
-                          "museum"],
+                          "museum", "spotify", "fitness", "gym ", "dance", "hotel", "climbing", "walltopia", "rowing",
+                          "swimming", "stadium"],
         "restaurants": ["restaurant", "burger", "mehana", "bar", "dinner", "food", "brew", "tekila", "bbq", "slado",
-                        "grill", "takeaway", "coffee", "cafe", "restorant", "diner", "beer"],
-        "home": ["jysk", "ikea", "praktiker", "momax", "aliexpress", "technopolis", "pepco"],
+                        "grill", "takeaway", "coffee", "cafe", "restorant", "diner", "beer", "kafe", "shahraiar", "chefs ",
+                        "sushi", " pub ", "skara", "kitchen", "pastry", "breakfast", "brunch"],
+        "home": ["наем", "rent", "jysk", "ikea", "praktiker", "momax", "aliexpress", "technopolis", "pepco", "jumbo", "zoo", "pets"],
+        "bills": ["ком.усл.", "vivacom", " a1", "yettel"],
         "transportation": ["bdz", "bus", "taxi", "omv", "lukoil", "gas", "petrol", "eko", "transport", "wizz", "ryan",
-                           "air "],
-        "clothes": ["reserved"]
+                           "air ", "omio ", "ride share", "car rent", "rent a car"],
+        "clothes": ["denim", "jeans", "fashion", "reserved", "remix", "h&m", "cropp", "lacoste", "puma", "pull&bear"],
+        "finance": ["trading", "onderwijs"]
     }
 
     for expense_category, categorised_keywords in categorised_keywords.items():

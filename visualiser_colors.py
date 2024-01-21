@@ -4,7 +4,9 @@ category_to_color_dict = {
     'entertainment': 'cornflowerblue',
     'restaurants': 'yellow',
     'home': 'mediumorchid',
+    'bills': 'darkorange',
     'transportation': 'purple',
     'clothes': 'orange',
-    'other': 'lightgrey'
+    'other': 'lightgrey',
+    'finance': 'violet'
 }

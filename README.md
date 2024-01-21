@@ -1,5 +1,7 @@
 # personal-banking-visualiser
-A small tool to categorise and visualise personal bank transactions.
+A small tool to categorise and visualise personal bank transactions.  
+
+Input file should be named `initial.xls`.
 
 ## adapt for your bank
 create a new importer for your bank's exported file of transactions and make sure it outputs it in a csv

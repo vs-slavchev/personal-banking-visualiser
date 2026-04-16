@@ -118,11 +118,13 @@ def _process_single_xls(xls_file, prefix):
     convert_xls_to_csv(xls_file, csv_file)
 
     account_currency = get_account_currency(xls_file)
+    print(f"  Account currency: {account_currency}")
 
     cleaned = f'{prefix}-2-cleaned.csv'
     clean_top_and_rename_columns(csv_file, cleaned)
 
     if account_currency == 'BGN':
+        print("  Converting BGN → EUR...")
         converted = f'{prefix}-2b-converted_to_eur.csv'
         convert_bgn_to_eur(cleaned, converted)
         cleaned = converted
@@ -133,6 +135,8 @@ def _process_single_xls(xls_file, prefix):
     dropped = f'{prefix}-4-dropped.csv'
     drop_columns(consolidated, dropped)
 
+    n = len(pd.read_csv(dropped))
+    print(f"  {n} transactions after filtering")
     return dropped
 
 
@@ -151,7 +155,9 @@ def transform_folder(input_folder):
         per_file_csvs.append(_process_single_xls(xls_file, prefix))
 
     combined_path = 'output/4-combined.csv'
-    pd.concat([pd.read_csv(f) for f in per_file_csvs]).to_csv(combined_path, index=False)
+    combined = pd.concat([pd.read_csv(f) for f in per_file_csvs])
+    combined.to_csv(combined_path, index=False)
+    print(f"Combined total: {len(combined)} transactions across {len(xls_files)} file(s)")
 
     ready_to_import = 'output/5-ready_to_import.csv'
     prepare_date_format_for_pandas(combined_path, ready_to_import)

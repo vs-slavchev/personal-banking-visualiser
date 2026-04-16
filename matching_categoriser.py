@@ -51,9 +51,14 @@ def categorize_string(description):
 
 
 def add_category(input_file, output_file):
+    print("Categorizing transactions with keyword matching...")
     data = pd.read_csv(input_file)
     data['category'] = data.apply(lambda x: categorize_string(x['description']), axis=1)
+    counts = data['category'].value_counts()
+    other_count = counts.get('other', 0)
+    print(f"Categorized {len(data)} transactions — {other_count} uncategorized ('other')")
     data.to_csv(output_file, index=False)
+    return data
 
 
 if __name__ == "__main__":

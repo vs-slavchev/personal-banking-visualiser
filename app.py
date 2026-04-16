@@ -6,6 +6,7 @@ from pypdf import PdfReader, PdfWriter
 from pypdf.annotations import Link
 from fibank_importer import transform_folder
 from matching_categoriser import add_category
+from openai_categoriser import categorize_with_openai
 from pie_visualiser import visualize_as_monthly_pies
 from bar_visualiser import visualize_as_bars
 from multiline_chart_visualiser import visualize_as_multiline_chart
@@ -16,13 +17,18 @@ from report_pages import (add_title_page, add_stats_page, add_toc_page,
 
 prepare_output_folder()
 
+print("=== Step 1: Importing transactions ===")
 input_folder = 'input'
 ready_to_import = transform_folder(input_folder)
 
+print("\n=== Step 2: Categorizing transactions ===")
 categorised_expenses = "output/categorised_expenses.csv"
-add_category(ready_to_import, categorised_expenses)
+df = add_category(ready_to_import, categorised_expenses)
 
-df = pd.read_csv(categorised_expenses)
+print("\n=== Step 3: AI categorization ===")
+df = categorize_with_openai(df)
+df.to_csv(categorised_expenses, index=False)
+
 df['date'] = pd.to_datetime(df['date'])
 months = sorted(df['date'].dt.strftime('%Y-%m').unique())
 n_months = len(months)
@@ -42,7 +48,9 @@ n_uncategorised_pages = max(1, -(-n_uncategorised // 25))  # ceiling division
 
 PDF_PATH = 'output/report.pdf'
 
+print("\n=== Step 4: Generating PDF report ===")
 with PdfPages(PDF_PATH) as pdf:
+    print("  Adding title and stats pages...")
     add_title_page(pdf, df)
     add_stats_page(pdf, df)
     add_toc_page(pdf, [
@@ -51,11 +59,14 @@ with PdfPages(PDF_PATH) as pdf:
         ('Monthly Bar Charts',          BARS_START          + 1),
         ('Uncategorised Transactions',  UNCATEGORISED_START + 1),
     ])
+    print("  Rendering charts...")
     visualize_as_multiline_chart(categorised_expenses, pdf)
     visualize_as_monthly_pies(categorised_expenses, pdf)
     visualize_as_bars(categorised_expenses, pdf)
+    print("  Adding uncategorised transactions table...")
     add_uncategorised_pages(pdf, df)
 
+print("\n=== Step 5: Adding bookmarks and links ===")
 # ── Post-process: add PDF outline (bookmarks) and TOC link annotations ──
 reader = PdfReader(PDF_PATH)
 writer = PdfWriter()
@@ -89,3 +100,5 @@ for target, yc in zip(section_targets, TOC_ENTRY_Y_CENTERS):
 
 with open(PDF_PATH, 'wb') as f:
     writer.write(f)
+
+print(f"\nDone! Report saved to {PDF_PATH}")

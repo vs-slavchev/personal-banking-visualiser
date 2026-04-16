@@ -11,6 +11,7 @@ from bar_visualiser import visualize_as_bars
 from multiline_chart_visualiser import visualize_as_multiline_chart
 from prepare_output_folder import prepare_output_folder
 from report_pages import (add_title_page, add_stats_page, add_toc_page,
+                           add_uncategorised_pages,
                            TOC_ENTRY_Y_CENTERS, TOC_ENTRY_HALF_H)
 
 prepare_output_folder()
@@ -27,12 +28,17 @@ months = sorted(df['date'].dt.strftime('%Y-%m').unique())
 n_months = len(months)
 
 # Page indices (0-based) for each section
-TITLE_PAGE    = 0
-STATS_PAGE    = 1
-TOC_PAGE      = 2
-OVERVIEW_PAGE = 3
-PIES_START    = 4
-BARS_START    = 4 + n_months
+TITLE_PAGE           = 0
+STATS_PAGE           = 1
+TOC_PAGE             = 2
+OVERVIEW_PAGE        = 3
+PIES_START           = 4
+BARS_START           = 4 + n_months
+UNCATEGORISED_START  = 4 + 2 * n_months
+
+# Pre-compute uncategorised page count so the TOC can show the right page number
+n_uncategorised = len(df[df['category'] == 'other'])
+n_uncategorised_pages = max(1, -(-n_uncategorised // 25))  # ceiling division
 
 PDF_PATH = 'output/report.pdf'
 
@@ -40,13 +46,15 @@ with PdfPages(PDF_PATH) as pdf:
     add_title_page(pdf, df)
     add_stats_page(pdf, df)
     add_toc_page(pdf, [
-        ('Overview',             OVERVIEW_PAGE + 1),
-        ('Monthly Pie Charts',   PIES_START    + 1),
-        ('Monthly Bar Charts',   BARS_START    + 1),
+        ('Overview',                    OVERVIEW_PAGE       + 1),
+        ('Monthly Pie Charts',          PIES_START          + 1),
+        ('Monthly Bar Charts',          BARS_START          + 1),
+        ('Uncategorised Transactions',  UNCATEGORISED_START + 1),
     ])
     visualize_as_multiline_chart(categorised_expenses, pdf)
     visualize_as_monthly_pies(categorised_expenses, pdf)
     visualize_as_bars(categorised_expenses, pdf)
+    add_uncategorised_pages(pdf, df)
 
 # ── Post-process: add PDF outline (bookmarks) and TOC link annotations ──
 reader = PdfReader(PDF_PATH)
@@ -55,20 +63,21 @@ for page in reader.pages:
     writer.add_page(page)
 
 # Bookmarks – nested outline entries
-overview_item = writer.add_outline_item('Overview',           OVERVIEW_PAGE)
-pies_item     = writer.add_outline_item('Monthly Pie Charts', PIES_START)
-bars_item     = writer.add_outline_item('Monthly Bar Charts', BARS_START)
+overview_item      = writer.add_outline_item('Overview',                   OVERVIEW_PAGE)
+pies_item          = writer.add_outline_item('Monthly Pie Charts',         PIES_START)
+bars_item          = writer.add_outline_item('Monthly Bar Charts',         BARS_START)
+uncategorised_item = writer.add_outline_item('Uncategorised Transactions', UNCATEGORISED_START)
 for i, month in enumerate(months):
     writer.add_outline_item(month, PIES_START + i, parent=pies_item)
 for i, month in enumerate(months):
     writer.add_outline_item(month, BARS_START + i, parent=bars_item)
 
 # Link annotations on the TOC page – derive rect from actual page dimensions
-toc_page     = reader.pages[TOC_PAGE]
-page_w_pt    = float(toc_page.mediabox.width)
-page_h_pt    = float(toc_page.mediabox.height)
+toc_page  = reader.pages[TOC_PAGE]
+page_w_pt = float(toc_page.mediabox.width)
+page_h_pt = float(toc_page.mediabox.height)
 
-section_targets = [OVERVIEW_PAGE, PIES_START, BARS_START]
+section_targets = [OVERVIEW_PAGE, PIES_START, BARS_START, UNCATEGORISED_START]
 for target, yc in zip(section_targets, TOC_ENTRY_Y_CENTERS):
     rect = (
         0.05 * page_w_pt,

@@ -8,5 +8,5 @@ category_to_color_dict = {
     'transportation': 'purple',
     'clothes': 'orange',
     'other': 'lightgrey',
-    'finance': 'violet'
+    'investment': 'violet'
 }

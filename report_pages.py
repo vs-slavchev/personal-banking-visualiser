@@ -1,3 +1,4 @@
+import math
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import pandas as pd
@@ -73,8 +74,9 @@ def add_stats_page(pdf, df):
     df['date']  = pd.to_datetime(df['date'])
     df['month'] = df['date'].dt.strftime('%Y-%m')
 
-    monthly_totals = df.groupby('month')['amount_eur'].sum()
-    cat_monthly    = df.groupby(['month', 'category'])['amount_eur'].sum().unstack(fill_value=0)
+    monthly_totals     = df.groupby('month')['amount_eur'].sum()
+    monthly_totals_noi = df[df['category'] != 'investment'].groupby('month')['amount_eur'].sum()
+    cat_monthly        = df.groupby(['month', 'category'])['amount_eur'].sum().unstack(fill_value=0)
 
     fig = plt.figure(figsize=(8.27, 11.69))
     ax  = fig.add_axes([0, 0, 1, 1])
@@ -91,26 +93,39 @@ def add_stats_page(pdf, df):
     # ── Monthly spend ──────────────────────────────────────────────
     ax.text(0.06, 0.895, 'Monthly spend', fontsize=12, fontweight='bold', color='#2c3e50')
 
+    def _fmt(series, idx_fn):
+        val = idx_fn(series)
+        month = series.idxmin() if idx_fn == min else series.idxmax()
+        return f'€{val:,.2f}  ({month})'
+
     monthly_rows = [
-        ['Average',  f'€{monthly_totals.mean():,.2f}'],
-        ['Median',   f'€{monthly_totals.median():,.2f}'],
-        ['Min',      f'€{monthly_totals.min():,.2f}   ({monthly_totals.idxmin()})'],
-        ['Max',      f'€{monthly_totals.max():,.2f}   ({monthly_totals.idxmax()})'],
+        ['Average',
+         f'€{monthly_totals.mean():,.2f}',
+         f'€{monthly_totals_noi.mean():,.2f}'],
+        ['Median',
+         f'€{monthly_totals.median():,.2f}',
+         f'€{monthly_totals_noi.median():,.2f}'],
+        ['Min',
+         f'€{monthly_totals.min():,.2f}  ({monthly_totals.idxmin()})',
+         f'€{monthly_totals_noi.min():,.2f}  ({monthly_totals_noi.idxmin()})'],
+        ['Max',
+         f'€{monthly_totals.max():,.2f}  ({monthly_totals.idxmax()})',
+         f'€{monthly_totals_noi.max():,.2f}  ({monthly_totals_noi.idxmax()})'],
     ]
 
-    ax_m = fig.add_axes([0.06, 0.72, 0.88, 0.165])
+    ax_m = fig.add_axes([0.06, 0.70, 0.88, 0.185])
     ax_m.axis('off')
     t_m = ax_m.table(
         cellText=monthly_rows,
-        colLabels=['Metric', 'Value'],
+        colLabels=['Metric', 'All categories', 'Excl. investment'],
         loc='upper left',
         cellLoc='left',
     )
     t_m.scale(1, 1.6)
-    _style_table(t_m, len(monthly_rows), 2, col_widths={0: 0.25, 1: 0.75})
+    _style_table(t_m, len(monthly_rows), 3, col_widths={0: 0.20, 1: 0.40, 2: 0.40})
 
     # ── Per-category spend ─────────────────────────────────────────
-    ax.text(0.06, 0.695, 'Spend by category  (EUR per month)', fontsize=12, fontweight='bold', color='#2c3e50')
+    ax.text(0.06, 0.675, 'Spend by category  (EUR per month)', fontsize=12, fontweight='bold', color='#2c3e50')
 
     order = cat_monthly.mean().sort_values(ascending=False).index
     cat_rows = []
@@ -124,7 +139,7 @@ def add_stats_page(pdf, df):
             f'€{col.max():,.2f}',
         ])
 
-    ax_c = fig.add_axes([0.06, 0.30, 0.88, 0.385])
+    ax_c = fig.add_axes([0.06, 0.27, 0.88, 0.395])
     ax_c.axis('off')
     t_c = ax_c.table(
         cellText=cat_rows,
@@ -144,9 +159,80 @@ def add_stats_page(pdf, df):
     plt.close()
 
 
-# Y-centres of the three TOC entry rows in axes coords (0=bottom, 1=top).
+_UNCATEGORISED_ROWS_PER_PAGE = 25
+
+
+def add_uncategorised_pages(pdf, df):
+    """Append pages listing all 'other' transactions sorted by amount descending.
+    Returns the number of pages added."""
+    other = (df[df['category'] == 'other']
+             .sort_values('amount_eur', ascending=False)
+             .copy())
+
+    if other.empty:
+        return 0
+
+    other['date']        = pd.to_datetime(other['date']).dt.strftime('%Y-%m-%d')
+    other['amount_eur']  = other['amount_eur'].map('€{:.2f}'.format)
+    other['description'] = other['description'].str.slice(0, 65)
+
+    rows    = other[['date', 'amount_eur', 'description']].values.tolist()
+    n_pages = math.ceil(len(rows) / _UNCATEGORISED_ROWS_PER_PAGE)
+
+    for page_idx in range(n_pages):
+        chunk = rows[page_idx * _UNCATEGORISED_ROWS_PER_PAGE:
+                     (page_idx + 1) * _UNCATEGORISED_ROWS_PER_PAGE]
+
+        fig = plt.figure(figsize=(8.27, 11.69))
+        ax  = fig.add_axes([0, 0, 1, 1])
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
+        ax.axis('off')
+
+        # Header bar
+        ax.add_patch(mpatches.FancyBboxPatch((0, 0.93), 1, 0.07,
+                     boxstyle='square,pad=0', facecolor=HEADER_COLOR))
+        title = 'Uncategorised Transactions'
+        if n_pages > 1:
+            title += f'  ({page_idx + 1} / {n_pages})'
+        ax.text(0.5, 0.965, title,
+                ha='center', va='center', fontsize=16, fontweight='bold', color='white')
+
+        ax_t = fig.add_axes([0.02, 0.01, 0.96, 0.90])
+        ax_t.axis('off')
+        t = ax_t.table(
+            cellText=chunk,
+            colLabels=['Date', 'Amount', 'Description'],
+            loc='upper left',
+            cellLoc='left',
+        )
+        t.auto_set_font_size(False)
+        t.set_fontsize(8.5)
+        t.scale(1, 1.4)
+
+        for (row, col), cell in t.get_celld().items():
+            cell.set_linewidth(0)
+            if row == 0:
+                cell.set_facecolor(HEADER_COLOR)
+                cell.set_text_props(color=HEADER_TEXT, fontweight='bold')
+            else:
+                cell.set_facecolor(ROW_EVEN if row % 2 == 0 else ROW_ODD)
+            if col == 0:
+                cell.set_width(0.13)
+            elif col == 1:
+                cell.set_width(0.13)
+            else:
+                cell.set_width(0.74)
+
+        pdf.savefig(fig)
+        plt.close()
+
+    return n_pages
+
+
+# Y-centres of the four TOC entry rows in axes coords (0=bottom, 1=top).
 # Exported so app.py can compute link annotation rectangles precisely.
-TOC_ENTRY_Y_CENTERS = [0.72, 0.55, 0.38]
+TOC_ENTRY_Y_CENTERS = [0.77, 0.62, 0.47, 0.32]
 TOC_ENTRY_HALF_H    = 0.055   # half-height of each clickable row
 
 

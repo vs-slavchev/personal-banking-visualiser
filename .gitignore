@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# all input files
+*.xls
+
 # C extensions
 *.so
 

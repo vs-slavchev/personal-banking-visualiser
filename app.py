@@ -1,3 +1,6 @@
+import matplotlib
+matplotlib.use('Agg')
+from matplotlib.backends.backend_pdf import PdfPages
 from fibank_importer import transform_folder
 from matching_categoriser import add_category
 from pie_visualiser import visualize_as_monthly_pies
@@ -13,6 +16,7 @@ ready_to_import = transform_folder(input_folder)
 categorised_expenses = "output/categorised_expenses.csv"
 add_category(ready_to_import, categorised_expenses)
 
-visualize_as_multiline_chart(categorised_expenses)
-visualize_as_monthly_pies(categorised_expenses)
-visualize_as_bars(categorised_expenses)
+with PdfPages('output/report.pdf') as pdf:
+    visualize_as_multiline_chart(categorised_expenses, pdf)
+    visualize_as_monthly_pies(categorised_expenses, pdf)
+    visualize_as_bars(categorised_expenses, pdf)

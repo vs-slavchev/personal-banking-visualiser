@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from visualiser_colors import category_to_color_dict
 
 
-def visualize_as_bars(csv_file):
+def visualize_as_bars(csv_file, pdf=None):
     """
   Visualizes the transaction data in the given CSV file. This code first reads the data from the CSV file into a Pandas DataFrame. Then, it groups the data by month and category and counts the number of transactions for each category. Finally, it creates a bar chart for each month showing the number of transactions per category. 
   
@@ -37,9 +37,13 @@ def visualize_as_bars(csv_file):
         plt.xlabel('Category')
         plt.ylabel('Number of Transactions')
         plt.title('Number of Transactions per Category in Month ' + str(month))
-        plt.savefig("output/bar-chart-" + str(month) + ".png", format="png")
-        plt.show()
-        plt.close()
+        if pdf:
+            pdf.savefig()
+            plt.close()
+        else:
+            plt.savefig("output/bar-chart-" + str(month) + ".png", format="png")
+            plt.show()
+            plt.close()
 
 
 if __name__ == '__main__':

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from visualiser_colors import category_to_color_dict
 
 
-def visualize_as_multiline_chart(csv_file_name):
+def visualize_as_multiline_chart(csv_file_name, pdf=None):
     """
   Visualizes transactions data by month and category. This code first reads the CSV file into a Pandas DataFrame. Then, it gets the month and category columns from the DataFrame. Next, it groups the data by month and category and sums the amount column for each group. Finally, it creates a pie chart for each month and shows the pie chart.
 
@@ -41,8 +41,11 @@ Bard prompt: Code up in Python3 a program that takes in a csv file containing tr
     plt.xticks(rotation=45)
     plt.tight_layout()
 
-    # Show the plot
-    plt.show()
+    if pdf:
+        pdf.savefig()
+        plt.close()
+    else:
+        plt.show()
 
 
 if __name__ == "__main__":

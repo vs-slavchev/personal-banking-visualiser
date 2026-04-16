@@ -1,4 +1,6 @@
 import csv
+import glob
+import os
 import pandas as pd
 import xlrd
 import re
@@ -109,28 +111,50 @@ def prepare_date_format_for_pandas(input_file, output_file):
     data.to_csv(output_file, index=False)
 
 
-def transform_csv(xls_file):
-    csv_file = 'output/1-initial.csv'
+def _process_single_xls(xls_file, prefix):
+    """Run one XLS file through the pipeline up to (and including) drop_columns.
+    Returns the path to the resulting CSV."""
+    csv_file = f'{prefix}-1-initial.csv'
     convert_xls_to_csv(xls_file, csv_file)
 
     account_currency = get_account_currency(xls_file)
 
-    transformed_transactions = 'output/2-cleaned_transactions.csv'
-    clean_top_and_rename_columns(csv_file, transformed_transactions)
+    cleaned = f'{prefix}-2-cleaned.csv'
+    clean_top_and_rename_columns(csv_file, cleaned)
 
     if account_currency == 'BGN':
-        converted = 'output/2b-converted_to_eur.csv'
-        convert_bgn_to_eur(transformed_transactions, converted)
-        transformed_transactions = converted
+        converted = f'{prefix}-2b-converted_to_eur.csv'
+        convert_bgn_to_eur(cleaned, converted)
+        cleaned = converted
 
-    consolidated_transactions = 'output/3-consolidated_transactions.csv'
-    consolidate_useful_columns(transformed_transactions, consolidated_transactions)
+    consolidated = f'{prefix}-3-consolidated.csv'
+    consolidate_useful_columns(cleaned, consolidated)
 
-    dropped_columns = 'output/4-dropped_columns.csv'
-    drop_columns(consolidated_transactions, dropped_columns)
+    dropped = f'{prefix}-4-dropped.csv'
+    drop_columns(consolidated, dropped)
+
+    return dropped
+
+
+def transform_folder(input_folder):
+    xls_files = sorted(glob.glob(os.path.join(input_folder, '*.xls')))
+    if not xls_files:
+        raise ValueError(f"No .xls files found in {input_folder}")
+
+    print(f"Found {len(xls_files)} file(s): {[os.path.basename(f) for f in xls_files]}")
+
+    per_file_csvs = []
+    for xls_file in xls_files:
+        stem = os.path.splitext(os.path.basename(xls_file))[0]
+        prefix = os.path.join('output', stem)
+        print(f"Processing {os.path.basename(xls_file)} ...")
+        per_file_csvs.append(_process_single_xls(xls_file, prefix))
+
+    combined_path = 'output/4-combined.csv'
+    pd.concat([pd.read_csv(f) for f in per_file_csvs]).to_csv(combined_path, index=False)
 
     ready_to_import = 'output/5-ready_to_import.csv'
-    prepare_date_format_for_pandas(dropped_columns, ready_to_import)
+    prepare_date_format_for_pandas(combined_path, ready_to_import)
 
     return ready_to_import
 

@@ -8,7 +8,7 @@ def categorize_string(description):
                       "market ", "avanti", "minimart", "coop", "migros", "conad", "aldi",
                       "carrefour", "kolichka", "mesarnic", "supermarket"],
         "health": ["lilly", "apteka", "dm ", "pharm", "remedium", "cibalab", "med ", "bodimed",
-                   "ramus", "medical", "dental", "termal"],
+                   "ramus", "medical", "dental", "termal", "gymbeam"],
         "entertainment": ["escape", "room", "film", "cinema", "steam", " sport", "ski", "aqua",
                           "boat", "yoga", "hotel", "museum", "spotify", "fitness", "gym ", "dance",
                           "climbing", "walltopia", "rowing", "swimming", "stadium",
@@ -32,9 +32,8 @@ def categorize_string(description):
                            "sncf", "s-bahn", "vinetki", "shell", "самолетн", "parking",
                            "via trakia", "citygate"],
         "clothes": ["denim", "jeans", "fashion", "reserved", "remix", "h&m", "cropp", "lacoste",
-                    "puma", "pull&bear", "spidi", "dekatlon", "gymbeam"],
-        "finance": ["trading", "onderwijs", "revolut", "такса", "fib_atm", "github", "aws ",
-                    "claude.ai", "coursera", "захранване"],
+                    "puma", "pull&bear", "dekatlon"],
+        "finance": ["trading", "onderwijs"],
     }
 
     for expense_category, categorised_keywords in categorised_keywords.items():

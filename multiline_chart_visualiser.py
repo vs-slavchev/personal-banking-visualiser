@@ -38,7 +38,7 @@ Bard prompt: Code up in Python3 a program that takes in a csv file containing tr
     plt.ylabel('Amount EUR')
     plt.title('Monthly Transactions by Category')
     plt.legend(title='Category')
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=45, ha='right')
     plt.tight_layout()
 
     if pdf:

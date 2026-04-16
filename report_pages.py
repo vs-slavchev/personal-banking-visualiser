@@ -64,7 +64,7 @@ def add_title_page(pdf, df):
     ax.text(0.5, 0.505, f'€{total_eur:,.2f}',
             ha='center', va='center', fontsize=30, fontweight='bold', color=ACCENT)
 
-    pdf.savefig(fig, bbox_inches='tight')
+    pdf.savefig(fig)
     plt.close()
 
 
@@ -140,5 +140,62 @@ def add_stats_page(pdf, df):
     _style_table(t_c, len(cat_rows), 5,
                  col_widths={0: 0.28, 1: 0.18, 2: 0.18, 3: 0.18, 4: 0.18})
 
-    pdf.savefig(fig, bbox_inches='tight')
+    pdf.savefig(fig)
+    plt.close()
+
+
+# Y-centres of the three TOC entry rows in axes coords (0=bottom, 1=top).
+# Exported so app.py can compute link annotation rectangles precisely.
+TOC_ENTRY_Y_CENTERS = [0.72, 0.55, 0.38]
+TOC_ENTRY_HALF_H    = 0.055   # half-height of each clickable row
+
+
+def add_toc_page(pdf, sections):
+    """Draw the table of contents page.
+
+    sections: list of (label, display_page_1indexed) – one entry per section,
+              in the same order as TOC_ENTRY_Y_CENTERS.
+    """
+    fig = plt.figure(figsize=(8.27, 11.69))
+    ax  = fig.add_axes([0, 0, 1, 1])
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.axis('off')
+
+    # Header bar
+    ax.add_patch(mpatches.FancyBboxPatch((0, 0.93), 1, 0.07,
+                 boxstyle='square,pad=0', facecolor=HEADER_COLOR))
+    ax.text(0.5, 0.965, 'Table of Contents',
+            ha='center', va='center', fontsize=16, fontweight='bold', color='white')
+
+    for i, (label, page_num) in enumerate(sections):
+        yc = TOC_ENTRY_Y_CENTERS[i]
+        h  = TOC_ENTRY_HALF_H
+
+        # Entry background
+        ax.add_patch(mpatches.FancyBboxPatch(
+            (0.05, yc - h), 0.90, 2 * h,
+            boxstyle='round,pad=0.008',
+            facecolor=ROW_EVEN, edgecolor='#d0d5d8', linewidth=0.5,
+        ))
+
+        # Numbered circle
+        ax.add_patch(plt.Circle((0.115, yc), 0.028, color=ACCENT, zorder=2))
+        ax.text(0.115, yc, str(i + 1),
+                ha='center', va='center', fontsize=10,
+                color='white', fontweight='bold', zorder=3)
+
+        # Section label
+        ax.text(0.175, yc, label,
+                ha='left', va='center', fontsize=13, color='#2c3e50')
+
+        # Dotted connector
+        ax.plot([0.58, 0.83], [yc, yc], ':', color='#bdc3c7', linewidth=1.2)
+
+        # Page number
+        ax.text(0.865, yc, f'p. {page_num}',
+                ha='left', va='center', fontsize=13,
+                color=ACCENT, fontweight='bold')
+
+    pdf.savefig(fig)
     plt.close()

@@ -37,6 +37,8 @@ def visualize_as_bars(csv_file, pdf=None):
         plt.xlabel('Category')
         plt.ylabel('Number of Transactions')
         plt.title('Number of Transactions per Category in Month ' + str(month))
+        plt.xticks(rotation=45, ha='right')
+        plt.tight_layout()
         if pdf:
             pdf.savefig()
             plt.close()

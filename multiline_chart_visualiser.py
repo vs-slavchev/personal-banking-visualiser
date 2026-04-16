@@ -27,7 +27,7 @@ Bard prompt: Code up in Python3 a program that takes in a csv file containing tr
     df['date_month'] = df['date'].dt.strftime('%Y-%m')
 
     # Group the data by month and category.
-    grouped_data = df.groupby(['date_month', 'category'])["amount_bgn"].sum().unstack()
+    grouped_data = df.groupby(['date_month', 'category'])["amount_eur"].sum().unstack()
 
     plt.figure(figsize=(10, 6))
     for category in grouped_data.columns:
@@ -35,7 +35,7 @@ Bard prompt: Code up in Python3 a program that takes in a csv file containing tr
 
     # Add labels and title
     plt.xlabel('Month')
-    plt.ylabel('Amount BGN')
+    plt.ylabel('Amount EUR')
     plt.title('Monthly Transactions by Category')
     plt.legend(title='Category')
     plt.xticks(rotation=45)

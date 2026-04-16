@@ -18,7 +18,7 @@ def visualize_as_bars(csv_file):
     data['date_month'] = data['date'].dt.strftime('%Y-%m')
 
     # Group the data by month and category.
-    grouped_data = data.groupby(['date_month', 'category'])['amount_bgn'].count()
+    grouped_data = data.groupby(['date_month', 'category'])['amount_eur'].count()
 
     # Create a bar chart for each month.
     for month, group_data in grouped_data.groupby('date_month'):

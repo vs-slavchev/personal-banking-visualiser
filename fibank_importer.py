@@ -3,8 +3,15 @@ import pandas as pd
 import xlrd
 import re
 
-amount = 'amount_bgn'
+BGN_TO_EUR = 1.95583
+amount = 'amount_eur'
 currency = 'cents_in_origin_currency'
+
+
+def get_account_currency(xls_file):
+    workbook = xlrd.open_workbook(xls_file)
+    sheet = workbook.sheet_by_index(0)
+    return sheet.cell(2, 3).value  # row 2, col 3 is the account currency (e.g. 'BGN' or 'EUR')
 
 
 def convert_xls_to_csv(xls_file, csv_file):
@@ -44,6 +51,12 @@ def clean_top_and_rename_columns(input_file, output_file):
             writer.writerow(transformed_headers)
             for row in reader:
                 writer.writerow(row)
+
+def convert_bgn_to_eur(input_file, output_file):
+    data = pd.read_csv(input_file)
+    data[amount] = (data[amount] / BGN_TO_EUR).round(2)
+    data.to_csv(output_file, index=False)
+
 
 def consolidate_useful_columns(input_file, output_file):
     """
@@ -100,8 +113,15 @@ def transform_csv(xls_file):
     csv_file = 'output/1-initial.csv'
     convert_xls_to_csv(xls_file, csv_file)
 
+    account_currency = get_account_currency(xls_file)
+
     transformed_transactions = 'output/2-cleaned_transactions.csv'
     clean_top_and_rename_columns(csv_file, transformed_transactions)
+
+    if account_currency == 'BGN':
+        converted = 'output/2b-converted_to_eur.csv'
+        convert_bgn_to_eur(transformed_transactions, converted)
+        transformed_transactions = converted
 
     consolidated_transactions = 'output/3-consolidated_transactions.csv'
     consolidate_useful_columns(transformed_transactions, consolidated_transactions)

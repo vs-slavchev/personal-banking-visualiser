@@ -27,7 +27,7 @@ Bard prompt: Code up in Python3 a program that takes in a csv file containing tr
     df['date_month'] = df['date'].dt.strftime('%Y-%m')
 
     # Group the data by month and category.
-    grouped_data = df.groupby(['date_month', 'category'])["amount_bgn"].sum()
+    grouped_data = df.groupby(['date_month', 'category'])["amount_eur"].sum()
 
     # Create a pie chart for each month.
     for month, group_data in grouped_data.groupby('date_month'):
@@ -46,7 +46,7 @@ Bard prompt: Code up in Python3 a program that takes in a csv file containing tr
                                        autopct=lambda p: '{:.0f}'.format(p * sum(pie_chart_slice_values) / 100))
         for i, patch in enumerate(patches):
             patch.set_facecolor(category_to_color_dict[texts[i].get_text()])
-        plt.title(f"BGN spent by category in month {month}")
+        plt.title(f"EUR spent by category in month {month}")
         plt.savefig("output/pie-chart-" + str(month) + ".png", format="png")
         plt.show()
         plt.close()
